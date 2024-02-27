@@ -69,8 +69,8 @@ train_df, valid_df = train_test_split(train_df, test_size=0.2, random_state=42)
 train_data = ImageDataset(df=train_df, img_dir=train_path, transform=transform)
 valid_data = ImageDataset(df=valid_df, img_dir=train_path, transform=transform)
 
-train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
-valid_loader = DataLoader(valid_data, batch_size=32, shuffle=False)
+train_loader = DataLoader(train_data, batch_size=200, shuffle=True)
+valid_loader = DataLoader(valid_data, batch_size=200, shuffle=False)
 
 # Define the model
 model = models.resnet34(pretrained=True)
