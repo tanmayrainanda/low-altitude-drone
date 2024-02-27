@@ -12,19 +12,27 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import models, transforms
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.preprocessing import LabelEncoder
 
 # Set seed for reproducibility
 torch.manual_seed(42)
 np.random.seed(42)
 
-# Define paths
-train_path = Path('/Users/tanmay/Documents/GitHub/low-altitude-drone/paddy-disease-classification/train_images')  # replace with your local path
-test_path = Path('/Users/tanmay/Documents/GitHub/low-altitude-drone/paddy-disease-classification/test_images')  # replace with your local path
+# Check for device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load train labels
-train_df = pd.read_csv('/Users/tanmay/Documents/GitHub/low-altitude-drone/paddy-disease-classification/train.csv')  # replace with your local path
-print(train_df.shape)
-print(train_df.label.value_counts())
+# Define paths
+train_path = Path('paddy-disease-classification/Trainset')
+test_path = Path('paddy-disease-classification/test_images')
+
+# Load train labels and perform label encoding
+train_df = pd.read_csv('paddy-disease-classification/train.csv')
+
+# Initialize LabelEncoder
+label_encoder = LabelEncoder()
+
+# Fit and transform the labels
+train_df['label_encoded'] = label_encoder.fit_transform(train_df['label'])
 
 # Define transformations
 transform = transforms.Compose([
@@ -47,7 +55,7 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.img_dir, self.df.iloc[idx, 0])
         image = Image.open(img_name)
-        label = self.df.iloc[idx, 1]
+        label = self.df.iloc[idx, 4]  # Adjusted to use the correct index for 'label_encoded'
 
         if self.transform:
             image = self.transform(image)
@@ -67,8 +75,8 @@ valid_loader = DataLoader(valid_data, batch_size=32, shuffle=False)
 # Define the model
 model = models.resnet34(pretrained=True)
 num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, len(train_df.label.unique()))
-model = model.to('cpu')
+model.fc = nn.Linear(num_ftrs, len(train_df['label'].unique()))
+model = model.to(device)
 
 # Define loss function and optimizer
 criterion = nn.CrossEntropyLoss()
@@ -76,10 +84,10 @@ optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
 
 # Train the model
 model.train()
-for epoch in range(50):  # replace with the number of epochs you want to train for
+for epoch in range(50):
+    running_loss = 0.0
     for inputs, labels in train_loader:
-        inputs = inputs.to('cpu')
-        labels = labels.to('cpu')
+        inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()
 
@@ -89,16 +97,23 @@ for epoch in range(50):  # replace with the number of epochs you want to train f
         loss.backward()
         optimizer.step()
 
+        running_loss += loss.item()
+    print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
+
 # Validate the model
 model.eval()
+all_preds = []
+all_labels = []
 with torch.no_grad():
     for inputs, labels in valid_loader:
-        inputs = inputs.to('cpu')
-        labels = labels.to('cpu')
+        inputs, labels = inputs.to(device), labels.to(device)
 
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
 
-        print(classification_report(labels.cpu(), preds.cpu()))
-        print(confusion_matrix(labels.cpu(), preds.cpu()))
-        print(accuracy_score(labels.cpu(), preds.cpu()))
+        all_preds.extend(preds.view(-1).cpu().numpy())
+        all_labels.extend(labels.view(-1).cpu().numpy())
+
+print(classification_report(all_labels, all_preds))
+print(confusion_matrix(all_labels, all_preds))
+print(f"Accuracy: {accuracy_score(all_labels, all_preds)}")
