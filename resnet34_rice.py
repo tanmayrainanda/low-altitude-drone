@@ -1,4 +1,7 @@
 import os
+os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
+import torch
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,13 +16,17 @@ from torchvision import models, transforms
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.preprocessing import LabelEncoder
+import wandb
+
+# Initialize a new run
+wandb.init(project="rice-disease-classification")
 
 # Set seed for reproducibility
 torch.manual_seed(42)
 np.random.seed(42)
 
 # Check for device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps")
 
 # Define paths
 train_path = Path('paddy-disease-classification/Trainset')
@@ -82,6 +89,9 @@ model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
 
+# Wrap your model and optimizer with wandb
+wandb.watch(model, log_freq=100)
+
 # Train the model
 model.train()
 for epoch in range(50):
@@ -99,6 +109,7 @@ for epoch in range(50):
 
         running_loss += loss.item()
     print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
+    wandb.log({"epoch": epoch, "loss": running_loss})
 
 # Validate the model
 model.eval()
@@ -117,3 +128,11 @@ with torch.no_grad():
 print(classification_report(all_labels, all_preds))
 print(confusion_matrix(all_labels, all_preds))
 print(f"Accuracy: {accuracy_score(all_labels, all_preds)}")
+
+# Log final results with wandb
+wandb.log({"classification_report": classification_report(all_labels, all_preds),
+           "confusion_matrix": confusion_matrix(all_labels, all_preds),
+           "accuracy": accuracy_score(all_labels, all_preds)})
+
+# Close your wandb run
+wandb.finish()

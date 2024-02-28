@@ -1,0 +1,49 @@
+{
+    "os": "macOS-14.3.1-arm64-arm-64bit",
+    "python": "3.11.7",
+    "heartbeatAt": "2024-02-27T14:38:43.584084",
+    "startedAt": "2024-02-27T14:38:42.287262",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/tanmay/Documents/GitHub/low-altitude-drone/resnet34_rice.py",
+    "codePathLocal": "resnet34_rice.py",
+    "codePath": "resnet34_rice.py",
+    "git": {
+        "remote": "https://github.com/tanmayrainanda/low-altitude-drone.git",
+        "commit": "ab4499dda1a7aafe49599ea22ebf3a8d759fc242"
+    },
+    "email": "Stormrider7600@gmail.com",
+    "root": "/Users/tanmay/Documents/GitHub/low-altitude-drone",
+    "host": "Tanmays-MacBook-Pro.local",
+    "username": "tanmay",
+    "executable": "/Users/tanmay/miniconda3/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 3504,
+        "min": 600,
+        "max": 3504
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3504,
+            "min": 600,
+            "max": 3504
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 228.27386474609375,
+            "used": 9.435096740722656
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 8.0
+    }
+}
