@@ -1,5 +1,3 @@
-import os
-os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
 import torch
 import os
 import pandas as pd
