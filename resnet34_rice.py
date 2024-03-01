@@ -12,7 +12,7 @@ from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
 from torchvision import models, transforms
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 from sklearn.preprocessing import LabelEncoder
 import wandb
 
@@ -24,7 +24,7 @@ torch.manual_seed(42)
 np.random.seed(42)
 
 # Check for device
-device = torch.device("mps")
+device = torch.device("cuda")
 
 # Define paths
 train_path = Path('paddy-disease-classification/Trainset')
@@ -126,6 +126,14 @@ with torch.no_grad():
 print(classification_report(all_labels, all_preds))
 print(confusion_matrix(all_labels, all_preds))
 print(f"Accuracy: {accuracy_score(all_labels, all_preds)}")
+print(f"Validation Loss: {running_loss/len(valid_loader)}")
+print(f"Validation Accuracy: {accuracy_score(all_labels, all_preds)}")
+print(f"F1 Score: {f1_score(all_labels, all_preds, average='weighted')}")
+
+#save the model
+torch.save(model.state_dict(), 'resnet34_rice.pth')
+#save the weights
+torch.save(model, 'resnet34_rice_weights.pth')
 
 # Log final results with wandb
 wandb.log({"classification_report": classification_report(all_labels, all_preds),
