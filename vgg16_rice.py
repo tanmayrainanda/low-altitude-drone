@@ -1,6 +1,6 @@
 # %%
-train_path = '/Users/tanmay/Documents/GitHub/low-altitude-drone/paddy-disease-classification/train_images'
-test_path  = '/Users/tanmay/Documents/GitHub/low-altitude-drone/paddy-disease-classification/test_images'
+train_path = '/Users/ananyashukla/Desktop/low-altitude-drone/paddy-disease-classification/train_images'
+test_path  = '/Users/ananyashukla/Desktop/low-altitude-drone/paddy-disease-classification/test_images'
 import glob
 from pathlib import Path
 
@@ -17,12 +17,22 @@ import pandas as pd
 import pickle
 import cv2
 import os
-from tensorflow import keras
+from pathlib import Path
+
+# import tensorflow as tf
+# from tensorflow import keras
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, Dataset
+from torchvision import models, transforms
+
 from os import listdir
 from sklearn.preprocessing import LabelBinarizer
 import keras.layers as layers
 from keras.models import Sequential
-from livelossplot import PlotLossesCallback
+# from livelossplot import PlotLossesCallback
 
 from keras.layers import BatchNormalization
 from keras.layers import Conv2D
@@ -37,6 +47,7 @@ from keras.preprocessing import image
 from keras.preprocessing.image import img_to_array
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
@@ -123,6 +134,9 @@ def create_model(input_shape, n_classes, optimizer='rmsprop', fine_tune=0):
     return model
 
 # %%
+# Newly Added!!
+net = models.vgg16(pretrained = True)  # Use a pretrained model
+
 def get_model():
     model = Sequential()
     inputShape = (height, width, depth)
@@ -160,9 +174,13 @@ def get_model():
     model.add(Dense(n_classes))
     model.add(Activation("softmax"))
     
-    opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
+    # opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
+    # optimizer = optim.Adam(net.parameters(), lr=INIT_LR)
+    # opt = tf.keras.optimizers.legacy.Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
+    optimizer = Adam(lr=INIT_LR)
+
     # distribution
-    model.compile(loss="binary_crossentropy", optimizer=opt,metrics=["accuracy"])
+    model.compile(loss="binary_crossentropy", optimizer = optimizer,metrics=["accuracy"])
     return model
 model = get_model()
 
@@ -228,7 +246,6 @@ test_generator = ImageDataGenerator(rescale=1./255).flow_from_directory(
 print(train_generator.class_indices)
 print(test_generator.samples)
 
-plot_loss_1 = PlotLossesCallback()
 
 # ModelCheckpoint callback - save best weights
 tl_checkpoint_1 = ModelCheckpoint(filepath='vgg_model_ft.weights.best.hdf5',
@@ -241,8 +258,6 @@ early_stop = EarlyStopping(monitor='val_loss',
                            restore_best_weights=True,
                            mode='min')
 
-plot_loss_2 = PlotLossesCallback()
-
 STEP_SIZE_TRAIN = train_generator.n//train_generator.batch_size
 STEP_SIZE_VALID = valid_generator.n//valid_generator.batch_size
 
@@ -251,7 +266,7 @@ vgg16_history = vgg16_model.fit_generator(generator = train_generator,
                                   steps_per_epoch = STEP_SIZE_TRAIN,
                                   validation_data = valid_generator,
                                   validation_steps = STEP_SIZE_VALID,
-                                  callbacks=[tl_checkpoint_1, early_stop, plot_loss_2],
+                                  callbacks=[tl_checkpoint_1, early_stop],
                                   verbose=1,epochs=EPOCHS)
 
 # %%
