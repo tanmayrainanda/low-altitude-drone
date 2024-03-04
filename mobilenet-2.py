@@ -32,7 +32,6 @@ print('test images')
 for filepath in glob.glob(test_path + '/*/'):
     files = glob.glob(filepath + '*')
     print(f"{len(files)} \t {Path(filepath).name}")
-
 class CustomDataset(Dataset):
     def __init__(self, data_path, transform=None):
         self.data_path = data_path
@@ -40,12 +39,14 @@ class CustomDataset(Dataset):
         self.classes = sorted(os.listdir(data_path))
         # Create a mapping from class names to integers
         self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(self.classes)}
+        # Generate a list of all image paths
+        self.img_paths = glob.glob(os.path.join(data_path, '*/*'))
 
     def __len__(self):
-        return sum(len(files) for _, _, files in os.walk(self.data_path))
+        return len(self.img_paths)
 
     def __getitem__(self, idx):
-        img_path = glob.glob(self.data_path + '/*/*')[idx]
+        img_path = self.img_paths[idx]
         label_name = os.path.basename(os.path.dirname(img_path))
         # Convert label name to integer
         label = self.class_to_idx[label_name]
@@ -151,6 +152,15 @@ for epoch in range(n_epochs):
     train_accs.append(train_acc)
     test_losses.append(test_loss)
     test_accs.append(test_acc)
+
+    # Log metrics to wandb
+    wandb.log({
+        "Epoch": epoch + 1,
+        "Train Loss": train_loss,
+        "Train Accuracy": train_acc,
+        "Test Loss": test_loss,
+        "Test Accuracy": test_acc
+    })
 
     print(f"Epoch {epoch+1}/{n_epochs}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.4f}")
 
