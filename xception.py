@@ -103,6 +103,8 @@ for epoch in range(EPOCHS):
         loss = loss1 + 0.4*loss2
         loss.backward()
         optimizer.step()
+    print(f'Epoch [{epoch+1}/{EPOCHS}], Loss: {loss.item():.4f}')
+    wandb.log({"epoch": epoch, "loss": loss.item()})
 
 # Testing loop
 model.eval()
