@@ -17,8 +17,8 @@ input_size = 299  # InceptionV3 input size
 batch_size = 32
 
 # Define paths
-train_path = 'paddy-disease-classification/train_images'  # Path to the directory containing training images
-test_path = 'paddy-disease-classification/test_images'  # Path to the directory containing test images
+train_path = "/Users/ananyashukla/Desktop/low-altitude-drone/paddy-disease-classification/train_images" # Path to the directory containing training images
+test_path =  "/Users/ananyashukla/Desktop/low-altitude-drone/paddy-disease-classification/test_images" # Path to the directory containing test images
 
 # Define transforms
 transform = transforms.Compose([
