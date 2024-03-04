@@ -13,6 +13,9 @@ from torchvision.models import inception_v3
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 
+# Initialize a new run
+wandb.init(project="rice-disease-classification")
+
 # Define constants
 SEED = 123
 EPOCHS = 100
@@ -119,3 +122,6 @@ print(f'Test Accuracy: {accuracy:.4f}')
 cm = confusion_matrix(true_labels, predictions)
 print('Confusion Matrix:')
 print(cm)
+
+# Initialize a new run
+wandb.init(project="rice-disease-classification")
