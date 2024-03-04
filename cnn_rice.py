@@ -10,6 +10,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from PIL import Image
 from pathlib import Path
+import wandb
+
+# Initialize a new run
+wandb.init(project="rice-disease-classification")
 
 # Set the device
 device = torch.device("mps")
@@ -138,3 +142,16 @@ with torch.no_grad():
         correct += (predicted == labels).sum().item()
 
     print('Test Accuracy of the model on the validation images: {} %'.format(100 * correct / total))
+
+# Log the test accuracy to W&B
+wandb.log({"test_accuracy": 100 * correct / total})
+
+# Save the model
+torch.save(model.state_dict(), "cnn_model.pth")
+
+# Save the weights
+torch.save(model, "cnn_model_weights.pth")
+
+# Log the model to W&B
+wandb.save("cnn_model.pth")
+wandb.finish()

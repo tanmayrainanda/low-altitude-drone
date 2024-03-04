@@ -13,6 +13,9 @@ from torchvision import models
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
+import wandb
+
+wandb.init(project='paddy-disease-classification')
 
 train_path = 'paddy-disease-classification/train_images'
 test_path = 'paddy-disease-classification/test_images'
@@ -180,3 +183,6 @@ plt.show()
 
 # Save the model
 torch.save(model.state_dict(), 'mobilenet_model.pth')
+
+wandb.save('mobilenet_model.pth')
+wandb.finish()
