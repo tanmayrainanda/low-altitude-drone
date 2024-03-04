@@ -12,6 +12,7 @@ from torchvision.datasets import ImageFolder
 from torchvision.models import inception_v3
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
+import wandb
 
 # Initialize a new run
 wandb.init(project="rice-disease-classification")
@@ -24,8 +25,8 @@ input_size = 299  # InceptionV3 input size
 batch_size = 32
 
 # Define paths
-train_path = "/Users/ananyashukla/Desktop/low-altitude-drone/paddy-disease-classification/Trainset" # Path to the directory containing training images
-test_path =  "/Users/ananyashukla/Desktop/low-altitude-drone/paddy-disease-classification/test_images" # Path to the directory containing test images
+train_path = "paddy-disease-classification/Trainset" # Path to the directory containing training images
+test_path =  "paddy-disease-classification/test_images" # Path to the directory containing test images
 
 # Load train labels and perform label encoding
 train_df = pd.read_csv('paddy-disease-classification/train.csv')
@@ -109,7 +110,8 @@ predictions = []
 true_labels = []
 with torch.no_grad():
     for inputs, labels in valid_loader:
-        inputs, labels = inputs.to(device), labels.to(device)
+        labels = torch.tensor([list(valid_data.classes).index(label) for label in labels]).to(device)
+        inputs = inputs.to(device)
         outputs = model(inputs)
         _, predicted = torch.max(outputs.data, 1)
         predictions.extend(predicted.cpu().numpy())
