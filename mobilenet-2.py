@@ -35,18 +35,25 @@ class CustomDataset(Dataset):
         self.data_path = data_path
         self.transform = transform
         self.classes = sorted(os.listdir(data_path))
+        # Create a mapping from class names to integers
+        self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(self.classes)}
 
     def __len__(self):
         return sum(len(files) for _, _, files in os.walk(self.data_path))
 
     def __getitem__(self, idx):
         img_path = glob.glob(self.data_path + '/*/*')[idx]
-        label = os.path.basename(os.path.dirname(img_path))
+        label_name = os.path.basename(os.path.dirname(img_path))
+        # Convert label name to integer
+        label = self.class_to_idx[label_name]
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.transform:
             image = self.transform(image)
+        
+        # Convert label to tensor
+        label = torch.tensor(label, dtype=torch.long)
 
         return image, label
 
@@ -57,13 +64,13 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-train_dataset = CustomDataset(train_path, train_labels, transform=transform)
+train_dataset = CustomDataset(train_path, transform=transform)
 test_dataset = CustomDataset(test_path, transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=200, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=200, shuffle=False)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps")
 
 model = models.mobilenet_v2(pretrained=True)
 model.classifier[1] = nn.Linear(model.classifier[1].in_features, len(train_dataset.classes))
