@@ -127,5 +127,14 @@ cm = confusion_matrix(true_labels, predictions)
 print('Confusion Matrix:')
 print(cm)
 
-# Initialize a new run
-wandb.init(project="rice-disease-classification")
+torch.save(model.state_dict(), 'inception_v3.pth')
+
+# Log confusion matrix and accuracy
+wandb.log({"confusion_matrix": wandb.plot.confusion_matrix(probs=None,
+                                                           y_true=true_labels,
+                                                           preds=predictions,
+                                                           class_names=list(valid_data.classes)),
+           "accuracy": accuracy})
+wandb.save('inception_v3.pth')
+
+wandb.finish()
