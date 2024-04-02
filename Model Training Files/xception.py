@@ -1,14 +1,11 @@
 import os
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from PIL import Image
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset, DataLoader
-from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader, Dataset
 from torchvision.models import inception_v3
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -26,7 +23,7 @@ batch_size = 32
 
 # Define paths
 train_path = "paddy-disease-classification/Trainset" # Path to the directory containing training images
-test_path =  "paddy-disease-classification/test_images" # Path to the directory containing test images
+test_path = "paddy-disease-classification/test_images" # Path to the directory containing test images
 
 # Load train labels and perform label encoding
 train_df = pd.read_csv('paddy-disease-classification/train.csv')
@@ -45,14 +42,14 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.img_dir, self.df.iloc[idx, 0])
         image = Image.open(img_name)
-        # label = self.df.iloc[idx, 4]  # Adjusted to use the correct index for 'label_encoded'
         label = self.df.iloc[idx, self.df.columns.get_loc('label')]
+        label = torch.tensor(label, dtype=torch.long)  # Convert label to a tensor
 
         if self.transform:
             image = self.transform(image)
 
         return image, label
-    
+
 # Define transforms
 transform = transforms.Compose([
     transforms.Resize((input_size, input_size)),
@@ -64,7 +61,6 @@ transform = transforms.Compose([
 train_df, valid_df = train_test_split(train_df, test_size=0.2, random_state=42)
 
 # Load datasets
-# Create data loaders
 train_data = ImageDataset(df=train_df, img_dir=train_path, transform=transform)
 valid_data = ImageDataset(df=valid_df, img_dir=train_path, transform=transform)
 
@@ -77,7 +73,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Create model instance
 num_classes = len(train_data.classes)
-# model = inception_v3(pretrained=True, aux_logits=False)
 model = inception_v3(pretrained=True, aux_logits=True)
 num_features = model.fc.in_features
 model.fc = nn.Linear(num_features, num_classes)
@@ -88,14 +83,10 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
 # Training loop
-# Training loop
-# Training loop
-# Training loop
 for epoch in range(EPOCHS):
     model.train()
     for inputs, labels in train_loader:
-        inputs = inputs.to(device)
-        labels = torch.tensor([list(train_data.classes).index(label) for label in labels]).to(device)
+        inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs, aux_outputs = model(inputs)
         loss1 = criterion(outputs, labels)
@@ -112,21 +103,21 @@ predictions = []
 true_labels = []
 with torch.no_grad():
     for inputs, labels in valid_loader:
-        labels = torch.tensor([list(valid_data.classes).index(label) for label in labels]).to(device)
-        inputs = inputs.to(device)
+        inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
         _, predicted = torch.max(outputs.data, 1)
         predictions.extend(predicted.cpu().numpy())
         true_labels.extend(labels.cpu().numpy())
 
 # Calculate accuracy and print confusion matrix
-accuracy = np.mean(np.array(predictions) == np.array(true_labels))
+accuracy = sum(predictions == true_labels) / len(true_labels)
 print(f'Test Accuracy: {accuracy:.4f}')
 
 cm = confusion_matrix(true_labels, predictions)
 print('Confusion Matrix:')
 print(cm)
 
+# Save the model
 torch.save(model.state_dict(), 'inception_v3.pth')
 
 # Log confusion matrix and accuracy
