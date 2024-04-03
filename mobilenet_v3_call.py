@@ -2,6 +2,8 @@ import torch
 from torchvision import models, transforms
 from PIL import Image
 from torch import nn
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
 import time
 
 class_dict = {
@@ -16,8 +18,9 @@ class_dict = {
     'normal': 8,
     'tungro': 9
 }
+
 # Define paths
-model_path = 'Trained Models/mobilenet_model.pth'
+model_path = 'Trained Models/mobilenetv3_model.pth'
 
 # Define transformations
 transform = transforms.Compose([
@@ -35,9 +38,14 @@ def load_image(image_path):
 
 # Load the model
 def load_model(model_path):
-    model = models.mobilenet_v2(weights=None)
-    num_classes = 10  # replace with your actual number of classes
-    model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+    model = models.mobilenet_v3_large(pretrained=False)
+    num_classes = 10
+    model.classifier = nn.Sequential(
+        nn.Linear(960, 1280),
+        nn.Hardswish(inplace=True),
+        nn.Dropout(p=0.2, inplace=True),
+        nn.Linear(1280, num_classes)
+    )
     model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
     return model
@@ -52,9 +60,9 @@ def classify(image_path, model_path):
     reverse_class_dict = {v: k for k, v in class_dict.items()}
     return reverse_class_dict[predicted_index]
 
-start = time.time()
 # Use the function
+time1 = time.time()
 image_path = 'paddy-disease-classification/train_images/tungro/101759.jpg'
 print(classify(image_path, model_path))
-end = time.time()
-print(f"Time taken: {end - start} seconds")
+time2 = time.time()
+print(f"Time taken: {time2 - time1} seconds")

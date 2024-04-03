@@ -75,13 +75,23 @@ valid_loader = DataLoader(valid_dataset, batch_size=200, shuffle=False)
 
 # Define the model
 model = models.mobilenet_v3_large(pretrained=True)
-model.classifier[1] = nn.Linear(model.classifier[1].in_features, len(np.unique(train_df['label_encoded'])))
+
+# Get the number of output classes
+num_classes = len(np.unique(train_df['label_encoded']))
+
+# Replace the classifier head
+model.classifier = nn.Sequential(
+    nn.Linear(960, 1280),
+    nn.Hardswish(inplace=True),
+    nn.Dropout(p=0.2, inplace=True),
+    nn.Linear(1280, num_classes)
+)
+
 model = model.to(device)
 
 # Define loss function and optimizer
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
-
 # Training and validation functions
 def train(model, train_loader, criterion, optimizer, device):
     model.train()
