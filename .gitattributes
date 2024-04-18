@@ -2,3 +2,4 @@ paddy-disease-classification filter=lfs diff=lfs merge=lfs -text
 cnn_model.pth filter=lfs diff=lfs merge=lfs -text
 .pth filter=lfs diff=lfs merge=lfs -text
 *.pth filter=lfs diff=lfs merge=lfs -text
+paddy-doctor-diseases-medium 1 filter=lfs diff=lfs merge=lfs -text
