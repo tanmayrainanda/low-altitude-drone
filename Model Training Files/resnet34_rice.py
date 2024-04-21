@@ -27,11 +27,11 @@ np.random.seed(42)
 device = torch.device("cuda")
 
 # Define paths
-train_path = Path('paddy-disease-classification/Trainset')
+train_path = Path('paddy-doctor-diseases-medium/trainset_full')
 test_path = Path('paddy-disease-classification/test_images')
 
 # Load train labels and perform label encoding
-train_df = pd.read_csv('paddy-disease-classification/train.csv')
+train_df = pd.read_csv('paddy-doctor-diseases-medium/metadata.csv')
 
 # Initialize LabelEncoder
 label_encoder = LabelEncoder()

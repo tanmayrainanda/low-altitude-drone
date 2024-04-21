@@ -23,11 +23,11 @@ np.random.seed(42)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define paths
-train_path = Path('paddy-disease-classification/train_images')
+train_path = Path('paddy-doctor-diseases-medium/train_images')
 test_path = Path('paddy-disease-classification/test_images')
 
 # Load train labels and perform label encoding
-train_df = pd.read_csv('paddy-disease-classification/train.csv')
+train_df = pd.read_csv('paddy-doctor-diseases-medium/metadata.csv')
 
 # Initialize LabelEncoder
 label_encoder = LabelEncoder()
@@ -56,7 +56,7 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.img_dir, self.df.iloc[idx, 0])
         image = Image.open(img_name)
-        label = self.df.iloc[idx]['label_encoded']  # Use label_encoded for indexing
+        label = self.df.iloc[idx]['label_encoded']
 
         if self.transform:
             image = self.transform(image)

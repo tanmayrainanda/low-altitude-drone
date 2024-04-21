@@ -12,7 +12,7 @@ class_dict = {
     'brown_spot': 4,
     'dead_heart': 5,
     'downy_mildew': 6,
-    'hispa': 7,
+    'hispa': 7, 
     'normal': 8,
     'tungro': 9
 }
