@@ -70,8 +70,8 @@ train_df, valid_df = train_test_split(train_df, test_size=0.2, random_state=42)
 train_dataset = ImageDataset(df=train_df, img_dir=train_path, transform=transform)
 valid_dataset = ImageDataset(df=valid_df, img_dir=train_path, transform=transform)
 
-train_loader = DataLoader(train_dataset, batch_size=200, shuffle=True)
-valid_loader = DataLoader(valid_dataset, batch_size=200, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 # Define the model
 model = models.mobilenet_v2(pretrained=True)
@@ -138,7 +138,7 @@ def validate(model, valid_loader, criterion, device):
     return valid_loss, valid_acc, all_true, all_pred
 
 # Training loop
-n_epochs = 100
+n_epochs = 50
 
 for epoch in range(n_epochs):
     train_loss, train_acc = train(model, train_loader, criterion, optimizer, device)
