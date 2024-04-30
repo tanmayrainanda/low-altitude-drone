@@ -204,5 +204,6 @@ results.append({
     'Recall': recall,
     'F1 Score': f1
 })
+print(results)
 wandb.save('mobilevit_model.pth')
 wandb.finish()
