@@ -1,5 +1,3 @@
-# MobileViT: Light-weight, General-purpose, and Mobile-friendly Vision Transformer for Rice Disease Classification
-# Importing Libraries
 import os
 import torch
 import torch.nn as nn
@@ -16,16 +14,15 @@ from sklearn.metrics import classification_report, precision_recall_fscore_suppo
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import torch
-import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torchvision import transforms
+import wandb
 
-# Early Stopping Class (Regularization)
+wandb.init(project="paddy-disease-classification")
+
 class EarlyStopping:
-    def __init__(self, patience = 5, min_delta = 0):
-        self.patience = patience # Patience: Number of epochs with no improvement after which training will be stopped
-        self.min_delta = min_delta # min_delta: Minimum change in the monitored quantity to qualify as an improvement
+    def __init__(self, patience=5, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
         self.counter = 0
         self.best_loss = None
         self.early_stop = False
@@ -46,28 +43,33 @@ class EarlyStopping:
     def save_checkpoint(self, val_loss, model):
         torch.save(model.state_dict(), 'checkpoint.pt')
 
-class Dataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+class CustomDataset(Dataset):
+    def __init__(self, root_dir, metadata_file, transform=None):
         self.root_dir = root_dir
+        self.metadata = pd.read_csv(metadata_file)
         self.transform = transform
-        self.classes = os.listdir(root_dir)
-        self.data = []
-        for cls in self.classes:
-            path = os.path.join(root_dir, cls)
-            if os.path.isdir(path):
-                for img_name in os.listdir(path):
-                    self.data.append((os.path.join(path, img_name), self.classes.index(cls)))
+        self.label_dict = dict(zip(self.metadata['image_id'], self.metadata['label']))
+
+        # Iterate through each class (subfolder)
+        self.classes = sorted(set(self.label_dict.values()))
+
+        # Create a dictionary that maps each class to a unique integer
+        self.class_to_int = {class_name: i for i, class_name in enumerate(self.classes)}
+
+        # Create a list of tuples (image path, label) for each image
+        self.data = [(os.path.join(root_dir, img_id), self.class_to_int[label]) for img_id, label in self.label_dict.items()]
 
     def __len__(self):
         return len(self.data)
-
+    
     def __getitem__(self, idx):
         img_path, label = self.data[idx]
-        image = Image.open(img_path).convert('RGB') # Convert to RGB to ensure 3 channels
+        image = Image.open(img_path).convert('RGB')  # Convert to RGB to ensure 3 channels
         if self.transform:
             image = self.transform(image)
-        return image, label
-    
+        return image, torch.tensor(label)
+
+
 def train_model(model, num_epochs, train_loader, val_loader, criterion, optimizer, device, scheduler, early_stopper):
     best_accuracy = 0.0
     best_model_wts = None
@@ -144,10 +146,11 @@ def evaluate_model(model, test_loader, device):
     return y_true, y_pred
 
 # Dataset Root Directory
-root_dir = "/Users/ananyashukla/Desktop/Ananya_Shukla/Semester 4/ILGC/low-altitude-drone/paddy-disease-classification/train_images"
+root_dir = "paddy-doctor-diseases-medium/trainset_full"
+metadata_file = "paddy-doctor-diseases-medium/metadata.csv"
 
 # Set Computation Device (GPU or CPU)
-device = torch.device("cuda" if torch.cuda.is_available() else "mps")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Transformations (NumPy to Tensor and Normalization)
 transform = torchvision.transforms.Compose([
@@ -156,41 +159,32 @@ transform = torchvision.transforms.Compose([
     torchvision.transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-dataset = Dataset(root_dir)
+# Create Dataset instance
+dataset = CustomDataset(root_dir, metadata_file, transform)
 
 # Train and Test Split
 train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
-train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
 # Apply transforms to datasets
 train_dataset.dataset.transform = transform
 test_dataset.dataset.transform = transform
 
 # Data loaders
-train_loader = DataLoader(train_dataset, batch_size = 16, shuffle = True)
-test_loader = DataLoader(test_dataset, batch_size = 16, shuffle = False)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, collate_fn=None)
+test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=None)
 
-num_epochs = 50
+num_epochs = 20
 model_name = 'mobilevit_s'
-CATEGORIES = ['bacterial_leaf_blight', 
-              'bacterial_leaf_streak', 
-              'bacterial_panicle_blight', 
-              'blast', 
-              'brown_spot', 
-              'dead_heart', 
-              'downy_mildew', 
-              'hispa', 
-              'normal', 
-              'tungro']
 
 print(f"Training MobileViT_s...")
-model = timm.create_model(model_name, pretrained=True, num_classes=len(CATEGORIES)).to(device)
-# print(model)
+model = timm.create_model(model_name, pretrained=True, num_classes=len(dataset.classes)).to(device)
+
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr = 0.001)
-scheduler = ReduceLROnPlateau(optimizer, mode='min', factor = 0.1, patience = 10)
-early_stopper = EarlyStopping(patience = 10, min_delta = 0.001)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
+early_stopper = EarlyStopping(patience=10, min_delta=0.001)
 
 model, train_losses, val_losses, train_accuracies, val_accuracies = train_model(model, num_epochs, train_loader, test_loader, criterion, optimizer, device, scheduler, early_stopper)
 
@@ -210,3 +204,5 @@ results.append({
     'Recall': recall,
     'F1 Score': f1
 })
+wandb.save('mobilevit_model.pth')
+wandb.finish()
